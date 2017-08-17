@@ -20,7 +20,7 @@ void image2hist()
 
   //TASImage image("crossSection_small.png");
   //  TASImage image("BigSize.png");
-  TASImage image("picTakenAtNPL.png");
+  TASImage image("inputPics/picTakenAtNPL.png");
 
    UInt_t yPixels = image.GetHeight();
    UInt_t xPixels = image.GetWidth();
