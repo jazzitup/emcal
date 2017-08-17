@@ -1,0 +1,2 @@
+# emcal
+sPHENIX calorimeter study
