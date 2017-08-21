@@ -12,47 +12,70 @@ bool isNeighbor( vector<int>& px, vector<int>& py, int xx=0, int yy=0) ;
 double getWgtCenter( vector<int>& x, vector<double>& e) ;
 double getSum( vector<double>& e) ;
 
-void image2hist()
+void fiberCounter()
 {
-  double seedThr = 0.8;
-  int searchRange = 20;
-  float rad = 2.5;
+  double seedThr = 0.9;
+  double bkgThr = 0.5;
+  int searchRange = 10;
+  float rad = 2;
 
-  //TASImage image("crossSection_small.png");
-  //  TASImage image("BigSize.png");
+
+  //  TASImage image("inputPics/picTakenAtNPL_piece1.png");
   TASImage image("inputPics/picTakenAtNPL.png");
 
    UInt_t yPixels = image.GetHeight();
    UInt_t xPixels = image.GetWidth();
    UInt_t *argb   = image.GetArgbArray();
 
-   TH2D* h = new TH2D("h","Rose histogram",xPixels,.5,xPixels+1,yPixels+1,.5,yPixels);
+   TH2D* h = new TH2D("h","Histogram",xPixels,.5,xPixels+1,yPixels+1,.5,yPixels);
    TH1D* h1d = new TH1D("h1d","1D histogram",256,0,1);
    TH1D* henergy = new TH1D("henergy",";energy of clusters",300,0,300);
+   TH2D* hzero = (TH2D*)h->Clone("hzero");
 
    h1d->Sumw2();
    for (int row=0; row<xPixels; ++row) {
       for (int col=0; col<yPixels; ++col) {
-         int index = col*xPixels+row;
-	 //	 cout << "argb[index] = " << argb[index] << endl;
+	int index = col*xPixels+row;
+	//	 cout << "argb[index] = " << argb[index] << endl;
          float grey = float(argb[index]&0xff)/256;
          h->SetBinContent(row+1,yPixels-col,grey);
 	 h1d->Fill(grey);
       }
    }
+   
+
+
 
    TCanvas* c0 = new TCanvas("c0","",400,400);
-   h1d->SetAxisRange(0.5,1,"X");
+   //   h1d->SetAxisRange(0.5,1,"X");
    h1d->Draw();
    gPad->SetLogy();
    c0->SaveAs("histo-1d.gif");
-   
+
+   TCanvas* c5 = new TCanvas("c5","",400,400);
+   hzero->Reset();
+   for ( int ix0=1 ; ix0<=h->GetNbinsX() ; ix0++) {
+     for ( int iy0=1 ; iy0<=h->GetNbinsY() ; iy0++) {
+       double val0 = h->GetBinContent(ix0,iy0);
+       //       if (val0 == 0 )
+       //       if (val0 < 0.05 ) 
+       if ( (val0 >0.1 ) && ( val0 < 0.2) )
+         hzero->SetBinContent(ix0, iy0, 1);
+     }}
+
+   hzero->Draw("colz");
+
+
+
+
    TCanvas* c1 = new TCanvas("c1","",800,400);
    c1->Divide(2,1);
    c1->cd(1);
    h->SetAxisRange(0,1,"z");
-   h->Draw("colz");
-
+   h->Draw("surf");
+   
+   
+   //   return;
    c1->cd(2);
    TH2D* h2 = (TH2D*)h->Clone("h2");
    for (int row=0; row<xPixels; ++row) {
@@ -86,12 +109,12 @@ void image2hist()
 
 
    
-   // Remoe backgrounds ;
+   // Remove backgrounds ;
    for ( int ix0=1 ; ix0<=h3->GetNbinsX() ; ix0++) {
      for ( int iy0=1 ; iy0<=h3->GetNbinsY() ; iy0++) {
 
        double val0 = h3->GetBinContent(ix0,iy0);
-       if (val0 < seedThr )
+       if (val0 < bkgThr )
 	 h3->SetBinContent(ix0, iy0, zeroInt);
      }}
    
@@ -104,9 +127,12 @@ void image2hist()
      for ( int iy0=1 ; iy0<=h3->GetNbinsY() ; iy0++) {
        
        double val0 = h3->GetBinContent(ix0,iy0);
-       if (val0 == zeroInt ) 
+       /*       if (val0 == zeroInt ) 
        continue;
-
+       */
+       if ( val0 < seedThr ) 
+	 continue;
+       
 
        // Found the quasi-seed
        px.clear();   py.clear();   inten.clear();
@@ -168,12 +194,12 @@ void image2hist()
    cout << "n = " << wgtx.size() << endl;
    for ( int ii = 0 ; ii<wgtx.size() ; ii++) { 
      TEllipse *el3 = new TEllipse( wgtx[ii], wgty[ii], rad);
-     el3->SetLineColor(kWhite);
-     el3->SetLineWidth(1);
+     el3->SetLineColor(kYellow);
+     el3->SetLineWidth(2);
      el3->SetFillStyle(0);
      el3->Draw();
    }
-   c3->Update();
+   //   c3->Update();
    c3->SaveAs("result.gif");
 
    TCanvas* c4 = new TCanvas("c4","",400,400);
