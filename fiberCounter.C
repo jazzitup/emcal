@@ -14,20 +14,26 @@ double getSum( vector<double>& e) ;
 
 void fiberCounter()
 {
-  double seedThr = 0.9;
-  double bkgThr = 0.5;
-  int searchRange = 10;
-  float rad = 2;
+  double seedThr = 0.5;
+  double bkgThr = 0.3;
+  int searchRange = 30;
+  float rad = 6;
+
+  gStyle->SetPalette(52);
 
 
   //  TASImage image("inputPics/picTakenAtNPL_piece1.png");
-  TASImage image("inputPics/picTakenAtNPL.png");
+  //  TASImage image("inputPics/picTakenAtNPL.png");
+  //  TASImage image("inputPics/exmample_defacts.png");
+  //  TASImage image("inputPics/exmample_goodClusters.png");
+  //  TASImage image("inputPics/pic_aug22_samll.png");
+  TASImage image("inputPics/pic_aug22.png");
 
    UInt_t yPixels = image.GetHeight();
    UInt_t xPixels = image.GetWidth();
    UInt_t *argb   = image.GetArgbArray();
 
-   TH2D* h = new TH2D("h","Histogram",xPixels,.5,xPixels+1,yPixels+1,.5,yPixels);
+   TH2D* h = new TH2D("h","",xPixels,.5,xPixels+1,yPixels+1,.5,yPixels);
    TH1D* h1d = new TH1D("h1d","1D histogram",256,0,1);
    TH1D* henergy = new TH1D("henergy",";energy of clusters",300,0,300);
    TH2D* hzero = (TH2D*)h->Clone("hzero");
@@ -72,24 +78,26 @@ void fiberCounter()
    c1->Divide(2,1);
    c1->cd(1);
    h->SetAxisRange(0,1,"z");
-   h->Draw("surf");
+   //   h->SetAxisRange(300,400,"X");    h->SetAxisRange(300,400,"Y");
+   h->Draw("colz");
+   gPad->SetRightMargin(0.2);
    
-   
-   //   return;
    c1->cd(2);
    TH2D* h2 = (TH2D*)h->Clone("h2");
+   h2->Reset();
    for (int row=0; row<xPixels; ++row) {
      for (int col=0; col<yPixels; ++col) {
-       double colVal = h2->GetBinContent(row+1,yPixels-col);
-       if (colVal > seedThr ) 
-	 h2->SetBinContent(row+1,yPixels-col,0.3);
+       double colVal = h->GetBinContent(row+1,yPixels-col);
+       if ((colVal >=.2) && ( colVal<1.1))
+	 h2->SetBinContent(row+1,yPixels-col,1);
       }
    }
+
   
    cout << "total number of pixels = " << (xPixels+1)*(yPixels+1) << endl;
    //   gStyle->SetPalette(53);
    h2->SetAxisRange(0,1,"z");
-   h2->DrawCopy("colz");
+   //   h2->DrawCopy("colz");
 
    c1->SaveAs("histo-2d.gif");
    //   return;
@@ -114,10 +122,12 @@ void fiberCounter()
      for ( int iy0=1 ; iy0<=h3->GetNbinsY() ; iy0++) {
 
        double val0 = h3->GetBinContent(ix0,iy0);
-       if (val0 < bkgThr )
+       if (val0 < bkgThr ) 
 	 h3->SetBinContent(ix0, iy0, zeroInt);
      }}
    
+
+   //   return;
    
    int nClst = 0;
    
@@ -179,8 +189,9 @@ void fiberCounter()
 
        h3->SetAxisRange(0,2,"z");
        h3->Draw("colz");
+       h3->SetXTitle(Form("Fiber counts : %d",nClst));
 
-       c2->SaveAs(Form("figs/iter_%d.png",nClst));
+       //       c2->SaveAs(Form("figs/iter_%d.png",nClst));
        px.clear();   py.clear();   inten.clear();
        //       return;
      }} // end of first iter
