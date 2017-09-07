@@ -27,7 +27,8 @@ void fiberCounter()
   //  TASImage image("inputPics/exmample_defacts.png");
   //  TASImage image("inputPics/exmample_goodClusters.png");
   //  TASImage image("inputPics/pic_aug22_samll.png");
-  TASImage image("inputPics/pic_aug22.png");
+  //  TASImage image("inputPics/pic_aug22.png");
+  TASImage image("inputPics/kodak/timmed_100_0015.png");
 
    UInt_t yPixels = image.GetHeight();
    UInt_t xPixels = image.GetWidth();
