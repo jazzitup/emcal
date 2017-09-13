@@ -14,9 +14,9 @@ double getSum( vector<double>& e) ;
 
 void fiberCounter()
 {
-  double seedThr = 0.5;
+  double seedThr = 0.6;
   double bkgThr = 0.3;
-  int searchRange = 30;
+  int searchRange = 50;
   float rad = 6;
 
   gStyle->SetPalette(52);
@@ -28,7 +28,10 @@ void fiberCounter()
   //  TASImage image("inputPics/exmample_goodClusters.png");
   //  TASImage image("inputPics/pic_aug22_samll.png");
   //  TASImage image("inputPics/pic_aug22.png");
-  TASImage image("inputPics/kodak/timmed_100_0015.png");
+    TASImage image("inputPics/kodak1/timmed_100_0015.png");
+  //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/kodak2_sept11/block1.jpg");
+  //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/fibersTungstenHindered.png");
+  //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/kodak2_sept11/black1-lowRes2.jpg");
 
    UInt_t yPixels = image.GetHeight();
    UInt_t xPixels = image.GetWidth();
@@ -175,8 +178,9 @@ void fiberCounter()
 	   }} // end of second iter
        }  // Repeat by nIteration times
        
-       cout << "Iteration " << nClst << "size of the cluster = " << inten.size() << endl;
-
+       if ( iter%100 ==0 ) {
+	 cout << "Iteration " << nClst << "size of the cluster = " << inten.size() << endl;
+       }
        wgtx.push_back(getWgtCenter( px, inten) );
        wgty.push_back(getWgtCenter( py, inten) );
        energy.push_back( getSum(inten) );
