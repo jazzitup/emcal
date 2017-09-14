@@ -8,15 +8,15 @@
 double zeroInt = -1;
 
 bool isDone ( TH2D* hh=0) ;
-bool isNeighbor( vector<int>& px, vector<int>& py, int xx=0, int yy=0) ;
 double getWgtCenter( vector<int>& x, vector<double>& e) ;
+void findNeighbors(TH2F* hInd, vector<int>& px, vector<int>& py);
 double getSum( vector<double>& e) ;
 
 void fiberCounter()
 {
-  double seedThr = 0.6;
-  double bkgThr = 0.3;
-  int searchRange = 50;
+  double seedThr = 0.9;
+  double bkgThr = 0.5;
+  const int searchRange = 50;
   float rad = 6;
 
   gStyle->SetPalette(52);
@@ -28,9 +28,9 @@ void fiberCounter()
   //  TASImage image("inputPics/exmample_goodClusters.png");
   //  TASImage image("inputPics/pic_aug22_samll.png");
   //  TASImage image("inputPics/pic_aug22.png");
-    TASImage image("inputPics/kodak1/timmed_100_0015.png");
+  TASImage image("inputPics/kodak1/timmed_100_0015.png");
   //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/kodak2_sept11/block1.jpg");
-  //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/fibersTungstenHindered.png");
+  // TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/fibersTungstenHindered.png");
   //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/kodak2_sept11/black1-lowRes2.jpg");
 
    UInt_t yPixels = image.GetHeight();
@@ -40,7 +40,7 @@ void fiberCounter()
    TH2D* h = new TH2D("h","",xPixels,.5,xPixels+1,yPixels+1,.5,yPixels);
    TH1D* h1d = new TH1D("h1d","1D histogram",256,0,1);
    TH1D* henergy = new TH1D("henergy",";energy of clusters",300,0,300);
-   TH2D* hzero = (TH2D*)h->Clone("hzero");
+   
 
    h1d->Sumw2();
    for (int row=0; row<xPixels; ++row) {
@@ -61,67 +61,34 @@ void fiberCounter()
    h1d->Draw();
    gPad->SetLogy();
    c0->SaveAs("histo-1d.gif");
-
-   TCanvas* c5 = new TCanvas("c5","",400,400);
-   hzero->Reset();
-   for ( int ix0=1 ; ix0<=h->GetNbinsX() ; ix0++) {
-     for ( int iy0=1 ; iy0<=h->GetNbinsY() ; iy0++) {
-       double val0 = h->GetBinContent(ix0,iy0);
-       //       if (val0 == 0 )
-       //       if (val0 < 0.05 ) 
-       if ( (val0 >0.1 ) && ( val0 < 0.2) )
-         hzero->SetBinContent(ix0, iy0, 1);
-     }}
-
-   hzero->Draw("colz");
-
-
-
-
-   TCanvas* c1 = new TCanvas("c1","",800,400);
-   c1->Divide(2,1);
-   c1->cd(1);
+ 
+   TCanvas* c1 = new TCanvas("c1","",400,400);
    h->SetAxisRange(0,1,"z");
    //   h->SetAxisRange(300,400,"X");    h->SetAxisRange(300,400,"Y");
    h->Draw("colz");
    gPad->SetRightMargin(0.2);
    
-   c1->cd(2);
-   TH2D* h2 = (TH2D*)h->Clone("h2");
-   h2->Reset();
-   for (int row=0; row<xPixels; ++row) {
-     for (int col=0; col<yPixels; ++col) {
-       double colVal = h->GetBinContent(row+1,yPixels-col);
-       if ((colVal >=.2) && ( colVal<1.1))
-	 h2->SetBinContent(row+1,yPixels-col,1);
-      }
-   }
 
-  
-   cout << "total number of pixels = " << (xPixels+1)*(yPixels+1) << endl;
-   //   gStyle->SetPalette(53);
-   h2->SetAxisRange(0,1,"z");
-   //   h2->DrawCopy("colz");
-
-   c1->SaveAs("histo-2d.gif");
-   //   return;
 
    TH2D* h3 = (TH2D*)h->Clone("h3");
    
-   int px0; 
-   int py0;
-   double inten0;
    std::vector<int> px;
    std::vector<int> py;
+   int kIn=1;  int kOut=-1;   int kUnde=0;
    std::vector<double> inten;
-
+   
+   double arrInten[2*searchRange+1,2*searchRange+1];
+   int arrFlag[2*searchRange+1,2*searchRange+1];
+      
+   
    std::vector<int> wgtx;
    std::vector<int> wgty;
    std::vector<double> energy;
 
-
    
-   // Remove backgrounds ;
+   
+   
+   // Clean up backgrounds ;
    for ( int ix0=1 ; ix0<=h3->GetNbinsX() ; ix0++) {
      for ( int iy0=1 ; iy0<=h3->GetNbinsY() ; iy0++) {
 
@@ -130,8 +97,6 @@ void fiberCounter()
 	 h3->SetBinContent(ix0, iy0, zeroInt);
      }}
    
-
-   //   return;
    
    int nClst = 0;
    
@@ -141,45 +106,90 @@ void fiberCounter()
      for ( int iy0=1 ; iy0<=h3->GetNbinsY() ; iy0++) {
        
        double val0 = h3->GetBinContent(ix0,iy0);
-       /*       if (val0 == zeroInt ) 
-       continue;
-       */
+
        if ( val0 < seedThr ) 
 	 continue;
-       
 
-       // Found the quasi-seed
-       px.clear();   py.clear();   inten.clear();
+       nClst++;
        
-       px.push_back(ix0); 
-       py.push_back(iy0);
-       inten.push_back(val0);
-       h3->SetBinContent(ix0,iy0,zeroInt);
+       TH2F* hInd = new TH2F(Form("ind_%d",nClst),"", 
+			     2*searchRange + 1, ix0-searchRange -0.5, ix0+searchRange +0.5,
+			     2*searchRange + 1, iy0-searchRange -0.5, iy0+searchRange +0.5);
+       // bin ranges from ix0-searchRange -> ix0+searchRange 
+       int centerBin = hInd->FindBin(ix0,iy0);
        
-       // Iterate NxN around it.  
-       int nIteration =  3;
-       for ( int iter = 1 ; iter<= nIteration ; iter++) {
-	 for ( int ix= ix0 - searchRange ; ix<= ix0 + searchRange ; ix++) {
-	   for ( int iy= iy0 - searchRange ; iy<= iy0 + searchRange ; iy++) {
-	     
-	     if (  ( ix < 1 ) ||  ( iy < 1 ) || ( ix > h3->GetNbinsX() ) ||  ( iy > h3->GetNbinsY() ) ) 
-	       continue;
+       hInd->SetBinContent(centerBin, val0);
+       h3->SetBinContent  (centerBin, zeroInt);
+       
+       
+       // Begin clustering
+       
+       int ix0a =  searchRange;     // index for array.   ii=x0-searchRange => iia = 0 
+       int iy0a =  searchRange;     // index for array.   ii=x0-searchRange => iia = 0 
+       
+       // Fill the array 
+       for ( int ii = ix0-searchRange ; ii<= ix0+searchRange ; ii++) {
+	 for ( int jj = iy0-searchRange ; jj<= iy0+searchRange ; jj++) {
+	   
+	   int iia = ii - (ix0-searchRange);    // index for array.   ii=x0-searchRange => iia = 0 
+	   int jja = jj - (iy0-searchRange);    // index for array.   ii=x0-searchRange => iia = 0 
+	   
+	   // initial setup for the array
+	   arrFlag[iia,jja] = -1 ;	   
+	   arrInten[iia,jja] = 0 ;
+	   //////////////////////////////
 
-	     double val = h3->GetBinContent(ix,iy);
-	     if (val  == zeroInt )
-	       continue;
-	     if ( isNeighbor(px, py, ix,iy) )  {
-	       px.push_back(ix);
-	       py.push_back(iy);
-	       inten.push_back(val);
-	       h3->SetBinContent(ix,iy,zeroInt);
-	     }
-	     
-	   }} // end of second iter
-       }  // Repeat by nIteration times
+	   if ( (ii < 1)||(jj<1) ) 
+	     continue;
+	   if ( (ii > h3->GetNbinsX() ) || (jj > h3->GetNbinsY() ) )
+	     continue;
+	   if ( valij < bkgThr ) continue;    // Ignore backgrounds
+	   
+	   double valij = h3->GetBinContent(ii,jj);
+	   arrInten[iia,jja,] = valij;
+	   arrFlag[iia,jja] = 0 ;	   
+	 }}
        
-       if ( iter%100 ==0 ) {
-	 cout << "Iteration " << nClst << "size of the cluster = " << inten.size() << endl;
+       // Begin Clustering 
+       px.clear();
+       py.clear();
+       arrInten[ix0a,iy0a] = kIn; 
+       px.push_back(ix0a); 
+       py.push_back(iy0a);
+       bool completeFlag = false;
+       while ( completeFlag==false)  
+	 {
+	   completeFlag = true;
+	   for ( int vi = 0 ; vi<= px.size() ; vi++) 
+	     {
+	       int xa = px[vi]  ;
+	       int ya = py[vi]  ;
+	       if ( xa < 2*searchRange  ) {  // right end
+		 if (  (arrFlag[xa+1,ya]==kUnde) && (arrInten[xa+1,ya] > bkgThr) )  {
+		   completeFlag=false; arrFlag[xa+1,ya]=kIn;   px.push_back(xa+1); py.push_back(ya); 
+		 }}
+	       if ( ya < 2*searchRange  ) {  // right end
+		 if (  (arrFlag[xa,ya+1]==kUnde) && (arrInten[xa,ya+1] > bkgThr) )  {
+		   completeFlag=false; arrFlag[xa,ya+1]=kIn;   px.push_back(xa);   py.push_back(ya+1);
+		 }}
+	       if ( xa > 0  ) {  // right end
+		 if (  (arrFlag[xa-1,ya]==kUnde) && (arrInten[xa-1,ya] > bkgThr) )  {
+		   completeFlag=false; arrFlag[xa-1,ya]=kIn;   px.push_back(xa-1); py.push_back(ya);
+		 }}
+	       if ( ya > 0  ) {  // right end
+		 if (  (arrFlag[xa,ya-1]==kUnde) && (arrInten[xa,ya-1] > bkgThr) )  {
+		   completeFlag=false; arrFlag[xa,ya-1]=kIn;   px.push_back(xa);   py.push_back(ya-1);
+		 }}
+	     } // end of px pixels
+	 }
+       // end of clustering 
+       
+       
+       
+       
+       
+       if ( nClst%100 ==0 ) {
+       	 cout << "Iteration " << nClst << "size of the cluster = " << inten.size() << endl;
        }
        wgtx.push_back(getWgtCenter( px, inten) );
        wgty.push_back(getWgtCenter( py, inten) );
@@ -187,7 +197,6 @@ void fiberCounter()
        henergy->Fill( getSum(inten) ) ;
 
        //       cout << " x,y,totE = " << wgtx[nClst] << ", " <<  wgty[nClst] <<", " <<  energy[nClst] <<", " << endl;
-       nClst++;
        
 
        //       if (nClst == 5)        	 return;
@@ -243,23 +252,15 @@ bool isDone ( TH2D* hh ) {
   return flag;
 }
 
-bool isNeighbor( vector<int>& px, vector<int>& py, int xx, int yy) {
-  bool flag = false;
-  for ( int ix = 0 ; ix< (int) px.size() ; ix++) { 
-    for ( int iy = 0 ; iy< (int) py.size() ; iy++) { 
-      if (  ( px[ix] == xx)  && (  abs( py[iy] - yy ) <= 1 ) )	{ 
-	//	cout << "found! :  " <<  px[ix] << ", " << xx << " and " << py[iy] << ", " << yy << endl;
-	return true;
-      }
-      if (  (py[iy]==yy)  && (  abs( px[ix] - xx ) <= 1 ) )  {
-	//	cout << "found! :  " <<  px[ix] << ", " << xx << " and " << py[iy] << ", " << yy << endl;
-	return true;
-      }
-      
-    }}
-  //  cout << "No they are not neighbor" << endl;
-  return false;
+
+void findNeighbors(TH2F* hInd, vector<int>& px, vector<int>& py) { 
+  
+  for ( 
+  int centerBin = hInd->FindBin(ix0,iy0);  
+  
 }
+
+
 double getWgtCenter( vector<int>& x, vector<double>& e) { 
   double sum=0;
   double totEnergy = 0 ;
