@@ -12,10 +12,10 @@ double getWgtCenter( vector<int>& x, vector<double>& e) ;
 //void findNeighbors(TH2F* hInd, vector<int>& px, vector<int>& py);
 double getSum( vector<double>& e) ;
 
-void fiberCounter()
+void fiberCounter(int num=1)
 {
   short seedThr = 200;
-  short bkgThr = 150;
+  short bkgThr = 100;
   const int searchRange = 50;
   //  float rad = 10;
   
@@ -24,7 +24,8 @@ void fiberCounter()
   gStyle->SetPalette(52);
   
   //  TASImage image("inputPics/kodak2_sept11/block2.jpg");
-  TASImage image("inputPics/anablesPics/100_0183_trimmed.JPG");
+  TString infName = Form("inputPics/anablesPics/Oct3_%d.JPG",num);
+  TASImage image(infName);
   //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/anablesPics/100_0183_trimmed_small-1.JPG");
   
   UInt_t yPixels = image.GetHeight();
@@ -36,6 +37,10 @@ void fiberCounter()
     cout <<"  (maxX<xPixels) || ( maxY <yPixels) ! " << endl;
     return;
   }
+  
+  TH1D* hNfib = new TH1D("hNfib",";number of clusters;Entries",4000,0,4000);
+
+
   UInt_t *argb   = image.GetArgbArray();
   
   TH2D* hOriginal = new TH2D("hOriginal","",xPixels,.5,xPixels+1,yPixels+1,.5,yPixels);
@@ -43,7 +48,11 @@ void fiberCounter()
 
 
   TH1D* h1d = new TH1D("h1d","1D histogram",256,0,256);
-  TH1D* henergy = new TH1D("henergy",";energy of clusters",300,0,300000);
+  TH1D* henergy = new TH1D(Form("henergy_%d",num),";energy of clusters",300,0,300000);
+  TH1D* hMeanE = (TH1D*)henergy->Clone("hMeanE");
+  hMeanE->SetXTitle("<cluster intensity>");
+  TH1D* hRMSE = new TH1D("hRMSE",";RMS;Entries",1000,0,100000);
+  TH1D* hRMSNorm = new TH1D("hRMSNorm",";RMS normalized by mean;Entries",1000,0,1);
   
   h1d->Sumw2();
   for (int row=0; row<xPixels; ++row) {
@@ -55,12 +64,13 @@ void fiberCounter()
     }
   }
   
-  TCanvas* c0 = new TCanvas("c0","",800,400);
+  TCanvas* c0 = new TCanvas("c0","",1200,600);
   c0->Divide(2,1);
   c0->cd(1);
+  h1d->SetAxisRange(0.5,2e6,"Y");
   h1d->Draw();
-  jumSun(seedThr,0.1,seedThr,1000);
-  jumSun(bkgThr,0.1,bkgThr,1000);
+  jumSun(seedThr,0.5,seedThr,2e6);
+  jumSun(bkgThr,0.5,bkgThr,2e6);
   gPad->SetLogy();
   c0->cd(2);
   h->SetAxisRange(0,256,"z");
@@ -163,7 +173,7 @@ void fiberCounter()
 	      countedHits++;
 	      px.push_back( xCand+1 ) ;
 	      py.push_back( yCand   ) ;
-	      pinten.push_back( intenCand   ) ;
+	      pinten.push_back( arrInten[xCand+1][yCand]   ) ;
 	      arrFlag[xCand+1][yCand]=kIn; 
 	    }
 	    
@@ -172,7 +182,7 @@ void fiberCounter()
 	      countedHits++;
 	      px.push_back( xCand-1 ) ;
 	      py.push_back( yCand   ) ;
-	      pinten.push_back( intenCand   ) ;
+	      pinten.push_back( arrInten[xCand-1][yCand]   ) ;
 	      arrFlag[xCand-1][yCand]=kIn; 
 	    }
 	    if ( (yCand < nYbins) && (arrFlag[xCand][yCand+1]==kUnde) ) { 	       // top end 
@@ -180,7 +190,7 @@ void fiberCounter()
 	      countedHits++;
 	      px.push_back( xCand ) ;
 	      py.push_back( yCand+1   ) ;
-	      pinten.push_back( intenCand   ) ;
+	      pinten.push_back( arrInten[xCand][yCand+1]   ) ;
 	      arrFlag[xCand][yCand+1]=kIn; 
 	    }
 	    if ( (yCand > 1    ) && (arrFlag[xCand][yCand-1]==kUnde) ) {  	       // bottom end 
@@ -188,14 +198,34 @@ void fiberCounter()
 	      countedHits++;
 	      px.push_back( xCand ) ;
 	      py.push_back( yCand-1   ) ;
-	      pinten.push_back( intenCand   ) ;
+	      pinten.push_back( arrInten[xCand][yCand-1]  ) ;
 	      arrFlag[xCand][yCand-1]=kIn; 
 	    }
 	  }
 	  itrBegin = itrEnd;
+
+
+	  /*	  if ( nClst==2 ) {
+            TCanvas* ctemp = new TCanvas("ctemp","", 400,400);
+            TH2D* htemp = new TH2D("htemp","",50, px[0]-15, px[0]+35, 50, py[0]-25, py[0]+25);
+            for ( int ii=0 ; ii<px.size(); ii++)   {
+              int theBin = htemp->FindBin( px[ii], py[ii]) ;
+              htemp->SetBinContent( theBin, pinten[ii] );
+            }
+	    htemp->SetAxisRange(200,256,"Z");
+	    htemp->Draw("colz");
+	    drawText(Form("Iter. %d",nIter),0.2,0.8);
+	    ctemp->SaveAs(Form("clustering_itr%d.png",nIter));
+	      
+	    }*/
+
+
+
+
+
 	}
       cout << "number of hits in "<<nClst<<"th cluster: " << px.size() << ",  nIteration = "<<nIter<<endl;  
-      
+
       int sumEnergy = 0;
       for ( int vi=0 ; vi < px.size() ; vi++) {
 	sumEnergy = sumEnergy + pinten[vi];
@@ -210,13 +240,26 @@ void fiberCounter()
       //      c11->SaveAs(Form("Cluster_%d.png",nClst));
       
     }}
+
+  hNfib->Fill(nClst);
+  hMeanE->Fill( henergy->GetMean() );
+  hRMSE->Fill( henergy->GetRMS() );
+  hRMSNorm->Fill(  henergy->GetRMS() / henergy->GetMean() ) ;
+
   // end of clustering 
   TCanvas* c2 = new TCanvas("c2","",400,400);
   handsomeTH1(henergy,1);
   henergy->SetXTitle("Intensity of each cluster");
   henergy->SetYTitle("Entries");
   henergy->Draw();
-
+  
+  TFile* fout = new TFile(Form("%s_outputHistograms.root",infName.Data()),"RECREATE");
+  henergy->Write();
+  hNfib->Write();
+  hMeanE->Write();
+  hRMSE->Write();
+  hRMSNorm->Write();
+  fout->Close();
   
 }
  
