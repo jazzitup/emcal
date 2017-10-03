@@ -49,8 +49,10 @@ void fiberCounter(int num=1)
 
   TH1D* h1d = new TH1D("h1d","1D histogram",256,0,256);
   TH1D* henergy = new TH1D(Form("henergy_%d",num),";energy of clusters",300,0,300000);
+  TH1D* henergyNorm = new TH1D(Form("henergyNorm_%d",num),";Self-normalized intensity",300,0,3);
   TH1D* hMeanE = (TH1D*)henergy->Clone("hMeanE");
   hMeanE->SetXTitle("<cluster intensity>");
+
   TH1D* hRMSE = new TH1D("hRMSE",";RMS;Entries",1000,0,100000);
   TH1D* hRMSNorm = new TH1D("hRMSNorm",";RMS normalized by mean;Entries",1000,0,1);
   
@@ -91,8 +93,10 @@ void fiberCounter(int num=1)
   std::vector<int> px;
   std::vector<int> py;
   std::vector<int> pinten;
-
   
+  std::vector<int> vClstE;  
+  std::vector<int> vClstENorm;  
+
 
   //  std::vector<short> inten;
      
@@ -232,6 +236,8 @@ void fiberCounter(int num=1)
       }
       cout << " total energy = " << sumEnergy << endl;
       henergy->Fill(sumEnergy);
+      vClstE.push_back(sumEnergy);
+
       //      for ( int vi=0 ; vi < px.size() ; vi++) {
       //	h4->SetBinContent( px[vi],  py[vi], pinten[vi]);
       //      }
@@ -240,7 +246,12 @@ void fiberCounter(int num=1)
       //      c11->SaveAs(Form("Cluster_%d.png",nClst));
       
     }}
-
+  
+  for ( int ci = 0 ; ci< vClstE.size() ; ci++) {
+    henergyNorm->Fill ( vClstE[ci] / henergy->GetMean() ) ;
+  }
+	  
+  
   hNfib->Fill(nClst);
   hMeanE->Fill( henergy->GetMean() );
   hRMSE->Fill( henergy->GetRMS() );
@@ -255,6 +266,7 @@ void fiberCounter(int num=1)
   
   TFile* fout = new TFile(Form("%s_outputHistograms.root",infName.Data()),"RECREATE");
   henergy->Write();
+  henergyNorm->Write();
   hNfib->Write();
   hMeanE->Write();
   hRMSE->Write();
