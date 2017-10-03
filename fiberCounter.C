@@ -78,7 +78,6 @@ void fiberCounter()
   
   // Clean up backgrounds ;
   short arrInten[maxX+1][maxY+1];
-  cout << "here 1 " << endl;
   short arrFlag[maxX+1][maxY+1];
   int kIn=1;  int kOut=-1;   int kUnde=0;
   int nXbins = h3->GetNbinsX() ; 
@@ -89,12 +88,10 @@ void fiberCounter()
       short val0 = h3->GetBinContent(ix0,iy0);
       
       arrInten[ix0][iy0] = val0;
-  cout << "here 2 " << endl;
       arrFlag[ix0][iy0] = kUnde;	
       if (val0 < bkgThr )  {
 	h3->SetBinContent(ix0, iy0, zeroInt);
 	arrInten[ix0][iy0] = 0;
-	cout << "here 3 " << endl;
 	arrFlag[ix0][iy0] =  kOut;
       }
     }
@@ -121,29 +118,27 @@ void fiberCounter()
       //      inten.push_back(val0);
       px.push_back(ix0);   
       py.push_back(iy0);
-  cout << "here 4 " << endl;
       arrFlag[ix0][iy0] = kIn;
       
       bool completeFlag = false;
       int nIter = 0;
       while ( completeFlag==false)  
-	 {
+	{
+	  cout << " px.size() = " << px.size() << endl;
 	   nIter++;
 	   completeFlag = true;
-	   for ( int vi = 0 ; vi<= (int)(px.size()) ; vi++) 
+	   int sizeItr = (int)(px.size()) ;    // <= This must not be in the condition line below!!!
+	   for ( int vi = 0 ; vi< sizeItr ; vi++) 
 	     {
 	       int xCand = px[vi];     int yCand = py[vi]; 
 	       //short intenCand = arrInten[xCand][yCand];   // intensity below background threshold is already out 
 	       
-	         cout << "here 5 " << endl;
-
 	       if ( (xCand < nXbins) && (arrFlag[xCand+1][yCand]==kUnde) ) {	       // right end 
 		 completeFlag=false; 
 		 px.push_back( xCand+1 ) ;
 		 py.push_back( yCand   ) ;
 		 arrFlag[xCand+1][yCand]=kIn; 
 	       }
-	       cout << "here 6 " << endl;
   
 	       if ( (xCand > 1    ) && (arrFlag[xCand-1][yCand]==kUnde) ) {	       // Left end 
 		 completeFlag=false; 
@@ -151,24 +146,21 @@ void fiberCounter()
 		 py.push_back( yCand   ) ;
 		 arrFlag[xCand-1][yCand]=kIn; 
 	       }
-	       cout << "here 7 " << endl;
 	       if ( (yCand < nYbins) && (arrFlag[xCand][yCand+1]==kUnde) ) { 	       // top end 
 		 completeFlag=false; 
 		 px.push_back( xCand ) ;
 		 py.push_back( yCand+1   ) ;
 		 arrFlag[xCand][yCand+1]=kIn; 
 	       }
-	       cout << "here 8 " << endl;
 	       if ( (yCand > 1    ) && (arrFlag[xCand][yCand-1]==kUnde) ) {  	       // bottom end 
 		 completeFlag=false; 
 		 px.push_back( xCand ) ;
 		 py.push_back( yCand-1   ) ;
 		 arrFlag[xCand][yCand-1]=kIn; 
 	       }
-	       cout << "here 9 " << endl;
 	     }
-	   cout << "number of hits in "<<nClst<<"th cluster: " << px.size() << ",  nIteration = "<<nIter<<endl;  
 	 }
+      cout << "number of hits in "<<nClst<<"th cluster: " << px.size() << ",  nIteration = "<<nIter<<endl;  
       
       return;
     }}
