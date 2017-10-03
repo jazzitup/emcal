@@ -19,8 +19,8 @@ void fiberCounter()
   const int searchRange = 50;
   //  float rad = 10;
   
-  const int maxX = 4000;
-  const int maxY = 4000;
+  const int maxX = 5000;
+  const int maxY = 5000;
   gStyle->SetPalette(52);
   
   //  TASImage image("inputPics/kodak2_sept11/block2.jpg");
