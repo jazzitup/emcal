@@ -49,6 +49,8 @@ void defectFinder()
    h->Draw("colz");
    TCanvas* c2 = new TCanvas("c2","",400,400);
    h1d->Draw();
+
+
    
 
 }
