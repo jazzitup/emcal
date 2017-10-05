@@ -13,7 +13,7 @@ void checkUniformity()
   gStyle->SetPalette(52);
   
   //  TASImage image("inputPics/kodak2_sept11/block2.jpg");
-  TString infName = "inputPics/anablesPics/Oct3_1.JPG";
+  TString infName = "inputPics/anablesPics/Oct3_7.JPG";
   TASImage image(infName);
   //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/anablesPics/100_0183_trimmed_small-1.JPG");
   
@@ -49,7 +49,7 @@ void checkUniformity()
     }
   }
   
-  TCanvas* c0 = new TCanvas("c0","",1200,600);
+  TCanvas* c0 = new TCanvas("c0","",800,400);
   c0->Divide(2,1);
   c0->cd(1);
   h1d->SetAxisRange(0.5,2e6,"Y");
@@ -63,16 +63,16 @@ void checkUniformity()
   c0->SaveAs("histo-1d.gif");
   
   TH2D* reBinnedH = rebinhist(h,50);
-  TCanvas* c1 = new TCanvas("c1","",1200,400);
+  TCanvas* c1 = new TCanvas("c1","",800,800);
   TH1D* hx = (TH1D*)reBinnedH->ProjectionX();
   TH1D* hy = (TH1D*)reBinnedH->ProjectionY();
-  c1->Divide(3,1);
+  c1->Divide(2,2);
   c1->cd(1);
   reBinnedH->Draw("LEGO");
-  c1->cd(2);
+  c1->cd(3);
   hx->Draw();
   drawText("X projection", 0.5,0.5);
-  c1->cd(3);
+  c1->cd(4);
   hy->Draw();
   drawText("Y projection", 0.5,0.5);
 
