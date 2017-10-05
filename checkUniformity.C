@@ -13,7 +13,7 @@ void checkUniformity()
   gStyle->SetPalette(52);
   
   //  TASImage image("inputPics/kodak2_sept11/block2.jpg");
-  TString infName = "inputPics/anablesPics/Oct3_7.JPG";
+  TString infName = "inputPics/anablesPics/Oct3_2.JPG";
   TASImage image(infName);
   //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/anablesPics/100_0183_trimmed_small-1.JPG");
   
