@@ -14,8 +14,8 @@ double getSum( vector<double>& e) ;
 
 void fiberCounter(int num=1)
 {
-  short seedThr = 200;
-  short bkgThr = 100;
+  short seedThr =100;
+  short bkgThr = 110;
   const int searchRange = 50;
   //  float rad = 10;
   
@@ -23,8 +23,9 @@ void fiberCounter(int num=1)
   const int maxY = 5000;
   gStyle->SetPalette(52);
   
-  //  TASImage image("inputPics/kodak2_sept11/block2.jpg");
-  TString infName = Form("inputPics/anablesPics/Oct3_%d.JPG",num);
+//  TString infName = Form("inputPics/anablesPics/Oct3_%d.JPG",num);
+  TString infName = "inputPics/anablesPics/both_ends/DBN_61-BL_22-WG.JPG";
+//  TString infName = "inputPics/anablesPics/both_ends/DBN_61-BL_22-NG.JPG";
   TASImage image(infName);
   //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/anablesPics/100_0183_trimmed_small-1.JPG");
   
@@ -95,7 +96,8 @@ void fiberCounter(int num=1)
   std::vector<int> pinten;
   
   std::vector<int> vClstE;  
-  std::vector<int> vClstENorm;  
+  std::vector<float> vClstX;  
+  std::vector<float> vClstY;  
 
 
   //  std::vector<short> inten;
@@ -136,6 +138,7 @@ void fiberCounter(int num=1)
 
       cout << " found new seed!   " ;
       cout <<"(x,y,intensity) = " <<  ix0<<", "<<iy0<<", "<<val0<<endl;
+
 
       // Found a seed!     (ix0, iy0, val0) are the seed! 
       nClst++;
@@ -229,14 +232,25 @@ void fiberCounter(int num=1)
 
 	}
       cout << "number of hits in "<<nClst<<"th cluster: " << px.size() << ",  nIteration = "<<nIter<<endl;  
-
       int sumEnergy = 0;
       for ( int vi=0 ; vi < px.size() ; vi++) {
 	sumEnergy = sumEnergy + pinten[vi];
       }
       cout << " total energy = " << sumEnergy << endl;
+
+      float xmean=0;
+      float ymean=0;
+      for ( int vi=0 ; vi < px.size() ; vi++) { 
+	xmean = xmean + px[vi]*pinten[vi] ;
+	ymean = ymean + py[vi]*pinten[vi] ;
+      }
+      xmean = xmean / sumEnergy ;
+      ymean = ymean / sumEnergy ;
+
       henergy->Fill(sumEnergy);
       vClstE.push_back(sumEnergy);
+      vClstX.push_back(xmean);
+      vClstY.push_back(ymean);
 
       //      for ( int vi=0 ; vi < px.size() ; vi++) {
       //	h4->SetBinContent( px[vi],  py[vi], pinten[vi]);
@@ -256,6 +270,18 @@ void fiberCounter(int num=1)
   hMeanE->Fill( henergy->GetMean() );
   hRMSE->Fill( henergy->GetRMS() );
   hRMSNorm->Fill(  henergy->GetRMS() / henergy->GetMean() ) ;
+  
+  TCanvas* c15 = new TCanvas("c15","",600,600);
+  h->SetAxisRange(0,256,"z");
+  h->Draw("colz");
+  gPad->SetRightMargin(0.2);
+  for ( int ci = 0 ; ci< vClstX.size() ; ci++) {
+    TEllipse *el3 = new TEllipse( vClstX[ci], vClstY[ci], 5);
+    el3->SetLineColor(kRed);
+    el3->SetLineWidth(2);
+    el3->SetFillStyle(0);
+    el3->Draw();
+  }
 
   // end of clustering 
   TCanvas* c2 = new TCanvas("c2","",400,400);
