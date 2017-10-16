@@ -663,6 +663,15 @@ void easyLeg( TLegend *a=0 , TString head="")
 
 
 
+double cleverRangeZ(TH2* h,float fac=1.2, float minZ=1.e-3)
+{
+  float maxZ =  fac * h->GetBinContent(h->GetMaximumBin());
+  //   cout <<" range will be set as " << minY << " ~ " << maxY << endl;
+  h->SetAxisRange(minZ,maxZ,"Z");
+  return maxZ;
+}
+
+
 double cleverRange(TH1* h,float fac=1.2, float minY=1.e-3)
 {
    float maxY =  fac * h->GetBinContent(h->GetMaximumBin());
