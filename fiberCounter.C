@@ -275,25 +275,24 @@ void fiberCounter(int num=1)
   c5->Divide(2,2);
   c5->cd(1);
   cleverRangeZ(gInten);
-  gInten->SetXTitle("Total intensity");
+  gInten->SetXTitle("Light intensity");
   gInten->Draw("colz");
 
   c5->cd(2);
   cleverRangeZ(gFibers);
-  gFibers->SetXTitle("Num of fibers");
+  gFibers->SetXTitle("Number of fibers");
   gFibers->Draw("colz");
 
   c5->cd(3);
-  densityInten->Draw("colz");
+  cleverRangeZ(densityInten);
   densityInten->SetXTitle("Density of Intensity");
   densityInten->Draw("colz");
 
   c5->cd(4);
-  densityNpix->Draw("colz");
-  densityNpix->SetXTitle("Density of fibers");
+  cleverRangeZ(densityNpix);
+  densityNpix->SetXTitle("Number of Pixel per fiber");
   densityNpix->Draw("colz");
   
-
 
   
   for ( int ci = 0 ; ci< vClstE.size() ; ci++) {
@@ -307,12 +306,13 @@ void fiberCounter(int num=1)
   hRMSNorm->Fill(  henergy->GetRMS() / henergy->GetMean() ) ;
   
   TCanvas* c15 = new TCanvas("c15","",600,600);
+  //  gStyle->SetPalette(52);
   h->SetAxisRange(0,256,"z");
   h->Draw("colz");
   gPad->SetRightMargin(0.2);
   for ( int ci = 0 ; ci< vClstX.size() ; ci++) {
     TEllipse *el3 = new TEllipse( vClstX[ci], vClstY[ci], 5);
-    el3->SetLineColor(kRed);
+    el3->SetLineColor(kWhite);
     el3->SetLineWidth(2);
     el3->SetFillStyle(0);
     el3->Draw();
