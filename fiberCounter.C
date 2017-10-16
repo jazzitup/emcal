@@ -7,15 +7,14 @@
 #include <TEllipse.h>
 double zeroInt = 1;
 
-bool isDone ( TH2D* hh=0) ;
 double getWgtCenter( vector<int>& x, vector<double>& e) ;
 //void findNeighbors(TH2F* hInd, vector<int>& px, vector<int>& py);
 double getSum( vector<double>& e) ;
 
 void fiberCounter(int num=1)
 {
-  short seedThr =100;
-  short bkgThr = 110;
+  short seedThr =70;
+  short bkgThr = 50;
   const int searchRange = 50;
   //  float rad = 10;
   
@@ -23,9 +22,9 @@ void fiberCounter(int num=1)
   const int maxY = 5000;
   gStyle->SetPalette(52);
   
-//  TString infName = Form("inputPics/anablesPics/Oct3_%d.JPG",num);
+  //  TString infName = Form("inputPics/anablesPics/Oct3_%d.JPG",num);
   TString infName = "inputPics/anablesPics/both_ends/DBN_61-BL_22-WG.JPG";
-//  TString infName = "inputPics/anablesPics/both_ends/DBN_61-BL_22-NG.JPG";
+  //  TString infName = "inputPics/anablesPics/both_ends/DBN_61-BL_22-NG.JPG";
   TASImage image(infName);
   //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/anablesPics/100_0183_trimmed_small-1.JPG");
   
@@ -56,7 +55,13 @@ void fiberCounter(int num=1)
 
   TH1D* hRMSE = new TH1D("hRMSE",";RMS;Entries",1000,0,100000);
   TH1D* hRMSNorm = new TH1D("hRMSNorm",";RMS normalized by mean;Entries",1000,0,1);
-  
+
+  TH2D* gFibers = new TH2D("nFibers",";X;Y",20,0,xPixels, 20, 0, yPixels);
+  TH2D* gInten = (TH2D*)gFibers->Clone("gInten");
+  TH2D* densityInten   = (TH2D*)gFibers->Clone("densityInten");
+  TH2D* gNpix  = (TH2D*)gFibers->Clone("gNpix");
+  TH2D* gensityNpix   = (TH2D*)gFibers->Clone("densityNpix");
+
   h1d->Sumw2();
   for (int row=0; row<xPixels; ++row) {
     for (int col=0; col<yPixels; ++col) {
@@ -67,7 +72,7 @@ void fiberCounter(int num=1)
     }
   }
   
-  TCanvas* c0 = new TCanvas("c0","",1200,600);
+  TCanvas* c0 = new TCanvas("c0","",900,450);
   c0->Divide(2,1);
   c0->cd(1);
   h1d->SetAxisRange(0.5,2e6,"Y");
@@ -211,7 +216,6 @@ void fiberCounter(int num=1)
 	  }
 	  itrBegin = itrEnd;
 
-
 	  /*	  if ( nClst==2 ) {
             TCanvas* ctemp = new TCanvas("ctemp","", 400,400);
             TH2D* htemp = new TH2D("htemp","",50, px[0]-15, px[0]+35, 50, py[0]-25, py[0]+25);
@@ -225,11 +229,6 @@ void fiberCounter(int num=1)
 	    ctemp->SaveAs(Form("clustering_itr%d.png",nIter));
 	      
 	    }*/
-
-
-
-
-
 	}
       cout << "number of hits in "<<nClst<<"th cluster: " << px.size() << ",  nIteration = "<<nIter<<endl;  
       int sumEnergy = 0;
@@ -240,7 +239,8 @@ void fiberCounter(int num=1)
 
       float xmean=0;
       float ymean=0;
-      for ( int vi=0 ; vi < px.size() ; vi++) { 
+      int nPixels= px.size();
+      for ( int vi=0 ; vi < nPixels ; vi++) { 
 	xmean = xmean + px[vi]*pinten[vi] ;
 	ymean = ymean + py[vi]*pinten[vi] ;
       }
@@ -251,7 +251,11 @@ void fiberCounter(int num=1)
       vClstE.push_back(sumEnergy);
       vClstX.push_back(xmean);
       vClstY.push_back(ymean);
-
+      
+      gFibers->Fill(xmean, ymean);
+      gInten-> Fill(xmean, ymean,sumEnergy);
+      gNpix-> Fill(xmean, ymean,nPixels);
+      
       //      for ( int vi=0 ; vi < px.size() ; vi++) {
       //	h4->SetBinContent( px[vi],  py[vi], pinten[vi]);
       //      }
@@ -260,6 +264,37 @@ void fiberCounter(int num=1)
       //      c11->SaveAs(Form("Cluster_%d.png",nClst));
       
     }}
+  
+  densityInten->Add(gInten);
+  densityInten->Divide(gFibers);
+  densityNpix->Add(gNpix);
+  densityNpix->Divide(gFibers);
+  
+  TCanvas* c5 = new TCanvas("c5","",900,900);
+  gStyle->SetPalette(1);
+  c5->Divide(2,2);
+  c5->cd(1);
+  cleverRangeZ(gInten);
+  gInten->SetXTitle("Total intensity");
+  gInten->Draw("colz");
+
+  c5->cd(2);
+  cleverRangeZ(gFibers);
+  gFibers->SetXTitle("Num of fibers");
+  gFibers->Draw("colz");
+
+  c5->cd(3);
+  densityInten->Draw("colz");
+  densityInten->SetXTitle("Density of Intensity");
+  densityInten->Draw("colz");
+
+  c5->cd(4);
+  densityNpix->Draw("colz");
+  densityNpix->SetXTitle("Density of fibers");
+  densityNpix->Draw("colz");
+  
+
+
   
   for ( int ci = 0 ; ci< vClstE.size() ; ci++) {
     henergyNorm->Fill ( vClstE[ci] / henergy->GetMean() ) ;
@@ -301,18 +336,6 @@ void fiberCounter(int num=1)
   
 }
  
-bool isDone ( TH2D* hh ) { 
-  bool flag = true;
-  for ( int ix=1 ; ix<=hh->GetNbinsX() ; ix++) {
-    for ( int iy=1 ; iy<=hh->GetNbinsY() ; iy++) {
-      if ( hh->GetBinContent(ix,iy) != zeroInt ) {
-	flag = false; 
-	break;
-      }
-    }
-  }
-  return flag;
-}
 
 
 double getWgtCenter( vector<int>& x, vector<double>& e) { 
