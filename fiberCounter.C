@@ -11,7 +11,7 @@ double getWgtCenter( vector<int>& x, vector<double>& e) ;
 //void findNeighbors(TH2F* hInd, vector<int>& px, vector<int>& py);
 double getSum( vector<double>& e) ;
 
-void fiberCounter(int num=1)
+void fiberCounter(int dbn=56, int num=20)
 {
   short seedThr =70;
   short bkgThr = 50;
@@ -22,8 +22,7 @@ void fiberCounter(int num=1)
   const int maxY = 5000;
   gStyle->SetPalette(52);
   
-  //  TString infName = Form("inputPics/anablesPics/Oct3_%d.JPG",num);
-  TString infName = "inputPics/anablesPics/both_ends/DBN_61-BL_22-WG.JPG";
+  TString infName = Form("/Users/yongsunkim/Downloads/drive-download-20171017T152549Z-001/DBN_%d-BL_%d-WG.JPG",dbn,num);
   //  TString infName = "inputPics/anablesPics/both_ends/DBN_61-BL_22-NG.JPG";
   TASImage image(infName);
   //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/anablesPics/100_0183_trimmed_small-1.JPG");
@@ -56,11 +55,14 @@ void fiberCounter(int num=1)
   TH1D* hRMSE = new TH1D("hRMSE",";RMS;Entries",1000,0,100000);
   TH1D* hRMSNorm = new TH1D("hRMSNorm",";RMS normalized by mean;Entries",1000,0,1);
 
-  TH2D* gFibers = new TH2D("nFibers",";X;Y",20,0,xPixels, 20, 0, yPixels);
+  TH2D* gFibers = new TH2D("nFibers",";X;Y",25,0,xPixels, 25, 0, yPixels);
   TH2D* gInten = (TH2D*)gFibers->Clone("gInten");
   TH2D* densityInten   = (TH2D*)gFibers->Clone("densityInten");
   TH2D* gNpix  = (TH2D*)gFibers->Clone("gNpix");
   TH2D* gensityNpix   = (TH2D*)gFibers->Clone("densityNpix");
+
+  TH1D* hDefDist = new TH1D("hDefDist","; RMS xy normalized by sqrt(area);", 200,0,200);
+
 
   h1d->Sumw2();
   for (int row=0; row<xPixels; ++row) {
@@ -240,12 +242,25 @@ void fiberCounter(int num=1)
       float xmean=0;
       float ymean=0;
       int nPixels= px.size();
+      float xsquare = 0 ;
+      float ysquare = 0 ;
       for ( int vi=0 ; vi < nPixels ; vi++) { 
 	xmean = xmean + px[vi]*pinten[vi] ;
 	ymean = ymean + py[vi]*pinten[vi] ;
+	xsquare = xsquare + px[vi]*px[vi]*pinten[vi] ; 
+	ysquare = ysquare + py[vi]*py[vi]*pinten[vi] ; 
       }
       xmean = xmean / sumEnergy ;
       ymean = ymean / sumEnergy ;
+      xsquare = xsquare / sumEnergy ;
+      ysquare = ysquare / sumEnergy ;
+      
+      float xRMS = sqrt ( xsquare - xmean*xmean ) / sqrt ( nPixels) ; 
+      float yRMS = sqrt ( ysquare - ymean*ymean ) / sqrt ( nPixels) ; 
+      float rRMS = sqrt( xRMS*xRMS + yRMS*yRMS) ;
+      hDefDist->Fill(rRMS);
+      // Anabel can add the RMS of each clusters here :  
+      // for example, xRMS, yRMS divided by the sqrt(area) = sqrt( nPixels) 
 
       henergy->Fill(sumEnergy);
       vClstE.push_back(sumEnergy);
@@ -265,10 +280,15 @@ void fiberCounter(int num=1)
       
     }}
   
+  TCanvas* cRMS =  new TCanvas("cRMS","",400,400);
+  hDefDist->Draw();
+
+  
   densityInten->Add(gInten);
   densityInten->Divide(gFibers);
   densityNpix->Add(gNpix);
   densityNpix->Divide(gFibers);
+
   
   TCanvas* c5 = new TCanvas("c5","",900,900);
   gStyle->SetPalette(1);
