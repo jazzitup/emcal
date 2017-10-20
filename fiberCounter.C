@@ -182,7 +182,8 @@ void fiberCounter(int dbn=56, int num=20)
 	    
 	    int xCand = px[vi];     int yCand = py[vi];      short intenCand = pinten[vi];
 	    
-	    if ( (xCand < nXbins) && (arrFlag[xCand+1][yCand]==kUnde) ) {	       // right end 
+	    //	    if ( (xCand < nXbins) &&  ( arrFlag[xCand+1][yCand]==kUnde)   ) {	       // right end 
+	    if ( (xCand < nXbins) &&  ( arrFlag[xCand+1][yCand]==kUnde)   ) {	       // right end 
 	      completeFlag=false; 
 	      countedHits++;
 	      px.push_back( xCand+1 ) ;
