@@ -13,10 +13,13 @@ double getSum( vector<double>& e) ;
 
 void fiberCounter(int dbn=56, int num=20)
 {
-  short seedThr =65;
-  short bkgThr = 60;
-  const int searchRange = 50;
+  short seedThr =20;
+  short bkgThr = 70;
 
+
+  short absBkg = 10;
+  int absAreaCut = 100;
+  const int searchRange = 100;
   const int maxX = 5000;
   const int maxY = 5000;
   gStyle->SetPalette(52);
@@ -114,23 +117,57 @@ void fiberCounter(int dbn=56, int num=20)
   // Clean up backgrounds ;
   short arrInten[maxX+1][maxY+1];
   short arrFlag[maxX+1][maxY+1];
-  int kIn=1;  int kOut=-1;   int kUnde=0;
+  short arrLocThr[maxX+1][maxY+1];
+  int kIn=1;  int kOut=-1;   int kUnde=0; 
   int nXbins = h3->GetNbinsX() ; 
   int nYbins = h3->GetNbinsY() ; 
 
   for ( int ix0=1 ; ix0<=nXbins ; ix0++) {
     for ( int iy0=1 ; iy0<=nYbins ; iy0++) {
+      arrLocThr[ix0][iy0] = bkgThr;
+
       short val0 = h3->GetBinContent(ix0,iy0);
-      
       arrInten[ix0][iy0] = val0;
       arrFlag[ix0][iy0] = kUnde;	
       if (val0 < bkgThr )  {
 	h3->SetBinContent(ix0, iy0, zeroInt);
-	arrInten[ix0][iy0] = 0;
 	arrFlag[ix0][iy0] =  kOut;
       }
+      
     }
   }
+  
+  // Local threshold 
+  for ( int ix0=1 ; ix0<=nXbins ; ix0 = ix0 + searchRange) {
+    for ( int iy0=1 ; iy0<=nYbins ; iy0 = iy0 + searchRange) {
+      
+      short localMax = 0;
+      for ( int ix = ix0 ; ix <= ix0 + searchRange - 1 ; ix++ ) { 
+	if (ix > nXbins ) continue;
+	for ( int iy = iy0 ; iy <= iy0 + searchRange - 1 ; iy++ ) { 
+	  if (iy > nYbins ) continue;
+	  
+	  if ( arrInten[ix][iy] > localMax )  { 
+	    localMax = arrInten[ix][iy]; 
+	  }
+	}
+      }
+
+      short localMin = localMax * 0.5;
+      for ( int ix = ix0 ; ix <= ix0 + searchRange - 1 ; ix++ ) {
+        if (ix > nXbins ) continue;
+        for ( int iy = iy0 ; iy <= iy0 + searchRange - 1 ; iy++ ) {
+          if (iy > nYbins ) continue;
+
+	  //if ( ( arrFlag[ix][iy] == kOut )  && (arrInten[ix][iy] >= localMin) )
+	  if ( (arrInten[ix][iy] >= localMin) )
+	    arrFlag[ix][iy] = kUnde;
+	  
+	  if ( arrInten[ix][iy] < absBkg )
+	    arrFlag[ix][iy] = kOut;
+	}
+      }
+    }}
   
   int nClst = 0;
   
@@ -141,7 +178,7 @@ void fiberCounter(int dbn=56, int num=20)
       if ( val0 < seedThr ) 
 	continue;
       if ( arrFlag[ix0][iy0] != kUnde ) // if it is already included in other clusters.
-	continue;
+      	continue;
 
       cout << " found new seed!   " ;
       cout <<"(x,y,intensity) = " <<  ix0<<", "<<iy0<<", "<<val0<<endl;
@@ -181,9 +218,9 @@ void fiberCounter(int dbn=56, int num=20)
 	  for ( int vi = itrBegin ; vi < itrEnd ; vi++) {
 	    
 	    int xCand = px[vi];     int yCand = py[vi];      short intenCand = pinten[vi];
-	    
+
 	    //	    if ( (xCand < nXbins) &&  ( arrFlag[xCand+1][yCand]==kUnde)   ) {	       // right end 
-	    if ( (xCand < nXbins) &&  ( arrFlag[xCand+1][yCand]==kUnde)   ) {	       // right end 
+	    if ( (xCand < nXbins) &&   (arrFlag[xCand+1][yCand]==kUnde) ){
 	      completeFlag=false; 
 	      countedHits++;
 	      px.push_back( xCand+1 ) ;
@@ -192,7 +229,7 @@ void fiberCounter(int dbn=56, int num=20)
 	      arrFlag[xCand+1][yCand]=kIn; 
 	    }
 	    
-	    if ( (xCand > 1    ) && (arrFlag[xCand-1][yCand]==kUnde) ) {	       // Left end 
+	    if ( (xCand > 1    ) && (arrFlag[xCand-1][yCand]==kUnde) ){
 	      completeFlag=false; 
 	      countedHits++;
 	      px.push_back( xCand-1 ) ;
@@ -200,7 +237,7 @@ void fiberCounter(int dbn=56, int num=20)
 	      pinten.push_back( arrInten[xCand-1][yCand]   ) ;
 	      arrFlag[xCand-1][yCand]=kIn; 
 	    }
-	    if ( (yCand < nYbins) && (arrFlag[xCand][yCand+1]==kUnde) ) { 	       // top end 
+	    if ( (yCand < nYbins) && (arrFlag[xCand][yCand+1]==kUnde)) {
 	      completeFlag=false; 
 	      countedHits++;
 	      px.push_back( xCand ) ;
@@ -208,7 +245,7 @@ void fiberCounter(int dbn=56, int num=20)
 	      pinten.push_back( arrInten[xCand][yCand+1]   ) ;
 	      arrFlag[xCand][yCand+1]=kIn; 
 	    }
-	    if ( (yCand > 1    ) && (arrFlag[xCand][yCand-1]==kUnde) ) {  	       // bottom end 
+	    if ( (yCand > 1    ) && ( arrFlag[xCand][yCand-1]==kUnde) ) {
 	      completeFlag=false; 
 	      countedHits++;
 	      px.push_back( xCand ) ;
@@ -233,13 +270,18 @@ void fiberCounter(int dbn=56, int num=20)
 	      
 	    }*/
 	}
+
+      if ( px.size() < absAreaCut )  {
+	cout << " The cluster's area is too small.  Smaller than " << absAreaCut << ", so this is skipped! " << endl;
+	continue;
+      }
       cout << "number of hits in "<<nClst<<"th cluster: " << px.size() << ",  nIteration = "<<nIter<<endl;  
       int sumEnergy = 0;
       for ( int vi=0 ; vi < px.size() ; vi++) {
 	sumEnergy = sumEnergy + pinten[vi];
       }
-      cout << " total energy = " << sumEnergy << endl;
-
+      cout << " Cluster energy = " << sumEnergy << endl;
+      //      if ( sumEnergy < absSumEnergyThr ) continue;
       float xmean=0;
       float ymean=0;
       int nPixels= px.size();
@@ -262,7 +304,7 @@ void fiberCounter(int dbn=56, int num=20)
       hDefDist->Fill(rRMS);*/
       // Anabel can add the RMS of each clusters here :  
       // for example, xRMS, yRMS divided by the sqrt(area) = sqrt( nPixels) 
-
+      
       henergy->Fill(sumEnergy);
       vClstE.push_back(sumEnergy);
       vClstX.push_back(xmean);
