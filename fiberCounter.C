@@ -13,16 +13,16 @@ double getSum( vector<double>& e) ;
 
 void fiberCounter(int dbn=56, int num=20)
 {
-  short seedThr =70;
-  short bkgThr = 50;
+  short seedThr =65;
+  short bkgThr = 60;
   const int searchRange = 50;
-  //  float rad = 10;
-  
+
   const int maxX = 5000;
   const int maxY = 5000;
   gStyle->SetPalette(52);
-  
+
   TString infName = Form("/Users/yongsunkim/Downloads/drive-download-20171017T152549Z-001/DBN_%d-BL_%d-WG.JPG",dbn,num);
+
   //  TString infName = "inputPics/anablesPics/both_ends/DBN_61-BL_22-NG.JPG";
   TASImage image(infName);
   //  TASImage image("/Users/yongsunkim/uiucAnalysis/emcal/inputPics/anablesPics/100_0183_trimmed_small-1.JPG");
@@ -255,10 +255,10 @@ void fiberCounter(int dbn=56, int num=20)
       xsquare = xsquare / sumEnergy ;
       ysquare = ysquare / sumEnergy ;
       
-      float xRMS = sqrt ( xsquare - xmean*xmean ) / sqrt ( nPixels) ; 
+      /*      float xRMS = sqrt ( xsquare - xmean*xmean ) / sqrt ( nPixels) ; 
       float yRMS = sqrt ( ysquare - ymean*ymean ) / sqrt ( nPixels) ; 
       float rRMS = sqrt( xRMS*xRMS + yRMS*yRMS) ;
-      hDefDist->Fill(rRMS);
+      hDefDist->Fill(rRMS);*/
       // Anabel can add the RMS of each clusters here :  
       // for example, xRMS, yRMS divided by the sqrt(area) = sqrt( nPixels) 
 
