@@ -7,14 +7,11 @@
 #include <TEllipse.h>
 double zeroInt = 1;
 
-double getWgtCenter( vector<int>& x, vector<double>& e) ;
-//void findNeighbors(TH2F* hInd, vector<int>& px, vector<int>& py);
-double getSum( vector<double>& e) ;
 
-void fiberCounter(int dbn=56, int num=20)
+void fiberCounter()
 {
   short seedThr =20;
-  short bkgThr = 70;
+  short bkgThr = 160;
 
 
   short absBkg = 10;
@@ -24,7 +21,8 @@ void fiberCounter(int dbn=56, int num=20)
   const int maxY = 5000;
   gStyle->SetPalette(52);
 
-  TString infName = Form("/Users/yongsunkim/Downloads/drive-download-20171017T152549Z-001/DBN_%d-BL_%d-WG.JPG",dbn,num);
+  int num = 1;
+  TString infName = "/Users/yongsunkim/Downloads/drive-download-20171017T152549Z-001/DBN_49-BL_19-WG.JPG";
 
   //  TString infName = "inputPics/anablesPics/both_ends/DBN_61-BL_22-NG.JPG";
   TASImage image(infName);
@@ -153,7 +151,7 @@ void fiberCounter(int dbn=56, int num=20)
 	}
       }
 
-      short localMin = localMax * 0.5;
+      short localMin = localMax * 0.7;
       for ( int ix = ix0 ; ix <= ix0 + searchRange - 1 ; ix++ ) {
         if (ix > nXbins ) continue;
         for ( int iy = iy0 ; iy <= iy0 + searchRange - 1 ; iy++ ) {
@@ -185,7 +183,6 @@ void fiberCounter(int dbn=56, int num=20)
 
 
       // Found a seed!     (ix0, iy0, val0) are the seed! 
-      nClst++;
       
       // Begin Clustering 
       //      inten.clear();
@@ -275,6 +272,7 @@ void fiberCounter(int dbn=56, int num=20)
 	cout << " The cluster's area is too small.  Smaller than " << absAreaCut << ", so this is skipped! " << endl;
 	continue;
       }
+      nClst++;
       cout << "number of hits in "<<nClst<<"th cluster: " << px.size() << ",  nIteration = "<<nIter<<endl;  
       int sumEnergy = 0;
       for ( int vi=0 ; vi < px.size() ; vi++) {
@@ -282,6 +280,7 @@ void fiberCounter(int dbn=56, int num=20)
       }
       cout << " Cluster energy = " << sumEnergy << endl;
       //      if ( sumEnergy < absSumEnergyThr ) continue;
+
       float xmean=0;
       float ymean=0;
       int nPixels= px.size();
@@ -401,21 +400,4 @@ void fiberCounter(int dbn=56, int num=20)
  
 
 
-double getWgtCenter( vector<int>& x, vector<double>& e) { 
-  double sum=0;
-  double totEnergy = 0 ;
-  for ( int ii = 0 ; ii < x.size() ; ii++) {
-    sum = sum + x[ii]*e[ii];
-    totEnergy = totEnergy + e[ii] ;
-  }
-  return sum/totEnergy;
-}
 
-double getSum( vector<double>& e) { 
-  double sum = 0;
-  for ( int ii = 0 ; ii < e.size() ; ii++) {
-    sum = sum + e[ii];
-  }
-  
-  return sum;
-}
