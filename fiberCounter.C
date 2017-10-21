@@ -322,6 +322,7 @@ void fiberCounter()
       
     }}
   
+  cout << endl << endl << "Total number of clusters: " << nClst << endl;
   TCanvas* cRMS =  new TCanvas("cRMS","",400,400);
   hDefDist->Draw();
 
